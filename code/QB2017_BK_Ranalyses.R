@@ -17,5 +17,17 @@ rm(list = ls())
 setwd("C:/Users/Venus/Github/QB2017BenavidezKuo/")
 
 # Load packages #
-require("vegan")
+require("vegan")  #Already contains BCI data
+require("BiodiversityR") #Contains more information on BCI dataset: long/lat/etc
+
+# Load BCI dataset #
+data(BCI) # Only for 1 year it seems 
+dim(BCI)
+View(BCI)
+
+
+
+
+
+
 
