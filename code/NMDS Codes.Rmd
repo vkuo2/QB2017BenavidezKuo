@@ -42,7 +42,7 @@ BCI.2010.SBS=BCI.2010.SbyS[,2:298]
 
 Creating ordination plots using NMDS.  This is a nonmetric option that uses rank order instread of abundances.  The stress plot is showing the relationship between observed dissimiliarity (what is actually in our dataset) against ordination distances (in this case distances using 3 dimensions).  As long as stress is relatively low it's capturing the differences within a communitiy and we can use it for another test to look for differences between communities.
 
-Ours are not excellent, but good enough to be used for further analyses I think.  Could not get them to converge regarless of iteration...but stress is within range.
+Ours are not excellent, but good enough to be used for further analyses I think.  Could not get them to converge regarless of iteration (I tried up to 500)...but stress is within range.
 
 ```{r}
 NMDS1982=metaMDS(BCI.1982.SBS,k=3,trymax=100)
