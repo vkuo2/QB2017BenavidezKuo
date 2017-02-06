@@ -1,0 +1,106 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Package requirements
+
+```{r}
+require("vegan") 
+require("tidyr")
+require(dplyr)
+```
+
+Creating SxS matrcies
+
+```{r}
+
+BCI2010 <- read.delim("BCI2010.txt", header=T)
+BCI2005 <- read.delim("BCI2005.txt", header=T)
+BCI2000 <- read.delim("BCI2000.txt", header=T)
+BCI1995 <- read.delim("BCI1995.txt", header=T)
+BCI1990 <- read.delim("BCI1990.txt", header=T)
+BCI1985 <- read.delim("BCI1985.txt", header=T)
+BCI1982 <- read.delim("BCI1982.txt", header=T)
+BCI.2010.SbyS <- group_by(BCI2010, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+BCI.2005.SbyS <- group_by(BCI2005, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+BCI.2000.SbyS <- group_by(BCI2000, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+BCI.1995.SbyS <- group_by(BCI1995, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+BCI.1990.SbyS <- group_by(BCI1990, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+BCI.1985.SbyS <- group_by(BCI1985, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+BCI.1982.SbyS <- group_by(BCI1982, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+
+#removing quadrat row
+BCI.1982.SBS=BCI.1982.SbyS[,2:307]
+BCI.1985.SBS=BCI.1985.SbyS[,2:308]
+BCI.1990.SBS=BCI.1990.SbyS[,2:306]
+BCI.1995.SBS=BCI.1995.SbyS[,2:304]
+BCI.2000.SBS=BCI.2000.SbyS[,2:303]
+BCI.2005.SBS=BCI.2005.SbyS[,2:300]
+BCI.2010.SBS=BCI.2010.SbyS[,2:298]
+```
+
+Creating ordination plots using NMDS.  This is a nonmetric option that uses rank order instread of abundances.  The stress plot is showing the relationship between observed dissimiliarity (what is actually in our dataset) against ordination distances (in this case distances using 3 dimensions).  As long as stress is relatively low it's capturing the differences within a communitiy and we can use it for another test to look for differences between communities.
+
+Ours are not excellent, but good enough to be used for further analyses I think.  Could not get them to converge regarless of iteration (I tried up to 500)...but stress is within range.
+
+```{r}
+NMDS1982=metaMDS(BCI.1982.SBS,k=3,trymax=100)
+NMDS1985=metaMDS(BCI.1985.SBS,k=3,trymax=100)
+NMDS1990=metaMDS(BCI.1990.SBS,k=3,trymax=100)
+NMDS1995=metaMDS(BCI.1995.SBS,k=3,trymax=100)
+NMDS2000=metaMDS(BCI.2000.SBS,k=3,trymax=100)
+NMDS2005=metaMDS(BCI.2005.SBS,k=3,trymax=100)
+NMDS2010=metaMDS(BCI.2010.SBS,k=3,trymax=100)
+
+par(mfrow=c(1,2))
+stressplot(NMDS1982)
+ordiplot(NMDS1982,type="n")
+orditorp(NMDS1982,display="species",col="red",air=0.01)
+orditorp(NMDS1982,display="sites",cex=1.25,air=0.01)
+
+par(mfrow=c(1,2))
+stressplot(NMDS1985)
+ordiplot(NMDS1985,type="n")
+orditorp(NMDS1985,display="species",col="red",air=0.01)
+orditorp(NMDS1985,display="sites",cex=1.25,air=0.01)
+
+par(mfrow=c(1,2))
+stressplot(NMDS1990)
+ordiplot(NMDS1990,type="n")
+orditorp(NMDS1990,display="species",col="red",air=0.01)
+orditorp(NMDS1990,display="sites",cex=1.25,air=0.01)
+
+par(mfrow=c(1,2))
+stressplot(NMDS1995)
+ordiplot(NMDS1995,type="n")
+orditorp(NMDS1995,display="species",col="red",air=0.01)
+orditorp(NMDS1995,display="sites",cex=1.25,air=0.01)
+
+par(mfrow=c(1,2))
+stressplot(NMDS2000)
+ordiplot(NMDS2000,type="n")
+orditorp(NMDS2000,display="species",col="red",air=0.01)
+orditorp(NMDS2000,display="sites",cex=1.25,air=0.01)
+
+par(mfrow=c(1,2))
+stressplot(NMDS2005)
+ordiplot(NMDS2005,type="n")
+orditorp(NMDS2005,display="species",col="red",air=0.01)
+orditorp(NMDS2005,display="sites",cex=1.25,air=0.01)
+
+par(mfrow=c(1,2))
+stressplot(NMDS2010)
+ordiplot(NMDS2010,type="n")
+orditorp(NMDS2010,display="species",col="red",air=0.01)
+orditorp(NMDS2010,display="sites",cex=1.25,air=0.01)
+```
+
+So I guess from here (as long as you are compfortable with this type of ordination)...we need to figure out how to do time-series analyses.  I hear we're going to cover it soon in class
+
+Right now, I'm not sure
+
+
+```{r}
+
+```
