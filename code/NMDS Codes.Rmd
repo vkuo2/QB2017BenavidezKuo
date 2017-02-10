@@ -2,6 +2,11 @@
 title: "R Notebook"
 output: html_notebook
 ---
+Set working directory 
+```{r}
+rm(list = ls())
+setwd("C:/Users/Venus/Github/QB2017BenavidezKuo/data")
+```
 
 Package requirements
 
@@ -14,7 +19,8 @@ require(dplyr)
 Creating SxS matrcies
 
 ```{r}
-
+# Load dataset #
+setwd("C:/Users/Venus/Github/QB2017BenavidezKuo/data")
 BCI2010 <- read.delim("BCI2010.txt", header=T)
 BCI2005 <- read.delim("BCI2005.txt", header=T)
 BCI2000 <- read.delim("BCI2000.txt", header=T)
@@ -22,6 +28,8 @@ BCI1995 <- read.delim("BCI1995.txt", header=T)
 BCI1990 <- read.delim("BCI1990.txt", header=T)
 BCI1985 <- read.delim("BCI1985.txt", header=T)
 BCI1982 <- read.delim("BCI1982.txt", header=T)
+
+# Formatting datasets into SbyS matrcies # 
 BCI.2010.SbyS <- group_by(BCI2010, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
 BCI.2005.SbyS <- group_by(BCI2005, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
 BCI.2000.SbyS <- group_by(BCI2000, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
@@ -30,7 +38,7 @@ BCI.1990.SbyS <- group_by(BCI1990, Quadrat) %>% count(Latin) %>% spread(key=Lati
 BCI.1985.SbyS <- group_by(BCI1985, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
 BCI.1982.SbyS <- group_by(BCI1982, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
 
-#removing quadrat row
+# Removing quadrat row
 BCI.1982.SBS=BCI.1982.SbyS[,2:307]
 BCI.1985.SBS=BCI.1985.SbyS[,2:308]
 BCI.1990.SBS=BCI.1990.SbyS[,2:306]
@@ -40,9 +48,9 @@ BCI.2005.SBS=BCI.2005.SbyS[,2:300]
 BCI.2010.SBS=BCI.2010.SbyS[,2:298]
 ```
 
-Creating ordination plots using NMDS.  This is a nonmetric option that uses rank order instread of abundances.  The stress plot is showing the relationship between observed dissimiliarity (what is actually in our dataset) against ordination distances (in this case distances using 3 dimensions).  As long as stress is relatively low it's capturing the differences within a communitiy and we can use it for another test to look for differences between communities.
+Creating ordination plots using NMDS. This is a nonmetric option that uses rank order instead of abundances. The stress plot is showing the relationship between observed dissimiliarity (what is actually in our dataset) against ordination distances (in this case distances using 3 dimensions).  As long as stress is relatively low it's capturing the differences within a communitiy and we can use it for another test to look for differences between communities.
 
-Ours are not excellent, but good enough to be used for further analyses I think.  Could not get them to converge regarless of iteration (I tried up to 500)...but stress is within range.
+Ours are not excellent, but good enough to be used for further analyses I think.  Could not get them to converge regardless of iteration (I tried up to 500)...but stress is within range.
 
 ```{r}
 NMDS1982=metaMDS(BCI.1982.SBS,k=3,trymax=100)
@@ -96,7 +104,7 @@ orditorp(NMDS2010,display="species",col="red",air=0.01)
 orditorp(NMDS2010,display="sites",cex=1.25,air=0.01)
 ```
 
-So I guess from here (as long as you are compfortable with this type of ordination)...we need to figure out how to do time-series analyses.  I hear we're going to cover it soon in class
+So I guess from here (as long as you are comfortable with this type of ordination)...we need to figure out how to do time-series analyses.  I hear we're going to cover it soon in class
 
 Right now, I'm not sure
 
