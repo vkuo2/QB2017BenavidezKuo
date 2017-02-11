@@ -23,12 +23,14 @@ require(dplyr)
 
 ## Load dataset ##
 # From BCI, Panama from year 2000 #
-BCI <- read.delim("BCI2000.txt", header=T)
+BCI <- read.delim("BCI2010.txt", header=T)
+
+## Transform census data into site by species matrix ##
+BCI.SbyS <- group_by(BCI, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
 
 # Slim down BCI data frame #
 dat <- subset(BCI, Quadrat ==0 , select = c(Latin, Quadrat, PX, PY))
-## Transform census data into site by species matrix ##
-#BCI.SbyS <- group_by(BCI, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+
 # Randomly sampling one individual or row #
 # In <- dat[sample(nrow(dat), 1), ]
 
@@ -40,9 +42,9 @@ SpList <- list()
   # use distance formula to get Euclidean distance
   # add the distance to a list of distances
   # add spID to another list (elements in SpList and DistList correspond)
-  
 
 # For loop to determine closest 4 species around sampled individual #
+
 
 # Sample indivudals from BCI #
 ilist <- dat[sample(nrow(dat), size = 100, replace = FALSE), ]
