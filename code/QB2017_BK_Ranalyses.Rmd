@@ -28,6 +28,9 @@ BCI <- read.delim("BCI2010.txt", header=T)
 # Slim down BCI data frame #
 #BCI.df <- subset(BCI, select = c(No., Latin, Quadrat, PX, PY))
 
+# Make Quadrat into factors #
+BCI$Quadrat <- as.factor(BCI$Quadrat)
+
 ```  
 
 ## Manually subseting Quadrat 0 ##
