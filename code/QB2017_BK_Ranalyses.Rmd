@@ -5,7 +5,7 @@ date: "February 11, 2017"
 output: html_document
 ---
 
-```{r setup}
+```{r}
 ## Setup work enviroment ##
 rm(list = ls())
 setwd("C:/Users/Venus/Github/QB2017BenavidezKuo/data")
@@ -16,81 +16,151 @@ require("tidyr")
 require(dplyr)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## Load and wrangle dataset ##
 
 ```{r}
-## Load dataset ##
 # From BCI, Panama from year 2000 #
 BCI <- read.delim("BCI2010.txt", header=T)
 
 ## Transform census data into site by species matrix ##
-BCI.SbyS <- group_by(BCI, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+#BCI.SbyS <- group_by(BCI, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
 
 # Slim down BCI data frame #
-BCI.dat <- subset(BCI, select = c(Latin, Quadrat, PX, PY))```
-
-## Including Plots
-
-You can also embed plots, for example:
+#BCI.df <- subset(BCI, select = c(No., Latin, Quadrat, PX, PY))
 
 ```  
 
-
+## Manually subseting Quadrat 0 ##
 
 ```{r}
 # Manually subsetting # 
-#dat <- subset(BCI, Quadrat ==0 , select = c(Latin, Quadrat, PX, PY))
+#BCI.Q.dat <- subset(BCI, Quadrat == 0 , select = c(No., Latin, Quadrat, PX, PY))
 
-# Randomly sampling one individual or row #
-# In <- dat[sample(nrow(dat), 1), ]
+# Subetting quadrat 0 dataset #
+BCI.Q.df <- subset(BCI, Quadrat == 0, select = c(No., Latin, Quadrat, PX, PY))
+# Defining rownames by No. #
+rownames(BCI.Q.df) <- BCI.Q.df[,1]
+# Removing No. #
+BCI.Q.df <- BCI.Q.df[, -1]
+# finding matrix elucidan distance among all individuals #
+distance <- as.matrix(dist(BCI.Q.df, upper = TRUE))
+# Removing instances of indiviudal distance with self # 
+ind.distance <- distance[which(rownames(distance)==76),which(colnames(distance)!=76)]
+# Ordering the neighbors and taking the first 4 closest #
+ordered.neighbors <- order(ind.distance)[1:4]
+# getting the names of the f closest neighbors #
+neighbors <- names(ind.distance[ordered.neighbors])
+# Pulling from BCI.dataset to get Latin name # 
+BCI.df[which(rownames(BCI.df) %in% neighbors), ]
 
-# Sample indivudals from BCI #
-ilist <- dat[sample(nrow(dat), size = 100, replace = FALSE), ]
+
+
+
+# Subetting quadrat 0 dataset #
+BCI.Q.df <- subset(BCI, Quadrat == 0)
+# Defining rownames by No. #
+rownames(BCI.Q.df) <- BCI.Q.df[,1]
+# Removing No. #
+BCI.Q.df <- BCI.Q.df[, -1]
+# finding matrix elucidan distance among all individuals #
+distance <- as.matrix(dist(BCI.Q.df, upper = TRUE))
+# define intermediate df #
+closest.neighbors <- NA
+# Define number of individual/rows in distance matrix #
+nrows <- nrow(distance)
+for(i in 1:nrows) {
+  ind.distance <- distance[which(rownames(distance)==i),which(colnames(distance)!=i)]
+  ordered.neighbors <- order(ind.distance)[1:4]
+  #neighbors <- names(ind.distance[ordered.neighbors])
+  #closest.neighbors <- rbind(closest.neighbors, neighbors)
+}
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-
+## For Loop to randomly sample quadrats, individuals, and find 4 closest neighbors in data.frame ##
 
 ```{r}
+# Subetting quadrat 0 dataset #
+#BCI.Q.df <- subset(BCI, Quadrat == 0, select = c(No., Latin, Quadrat, PX, PY))
 
-# For loop to sample 1 individual and nearest neighbors # 
-main.dat <- NA
-nrows.1 <- nrow(ilist)
-for(i in 1:nrows.1) {
-  x1 <- as.numeric(ilist[i,]["PX"])
-  y1 <- as.numeric(ilist[i,]["PY"])
-  spID <- ilist[i,]["Latin"]
-  z <- cbind(spID, x1, y1)
+# For loop to randomly sample quadrat in BCI.dat # 
+neighbor.df <- data.frame()
+nquad <- nlevels(BCI$Quadrat)
+for(i in 1:nquad) {
+  BCI.Q.dat <- subset(BCI, Quadrat == i , select = c(Latin, Quadrat, PX, PY))
+  ilist <- BCI.Q.dat[sample(nrow(BCI.Q.dat), size = 5, replace = FALSE), ]
+
+  nrows.1 <- nrow(ilist)
+  nrows.2 <- nrow(BCI.Q.df)
+     for(i in 1:nrows.1) {   
+        x1 <- as.numeric(ilist[i,]["PX"])
+        y1 <- as.numeric(ilist[i,]["PY"])
+        spID <- ilist[i,]["Latin"]
+        individual <- cbind(spID, x1, y1)
   
-  zz.dat <- NA
+        temp.neighbor.df <- data.frame()
+ 
+        for(j in 1:nrows.2) {
+          x2 <- as.numeric(BCI.Q.df[j,]["PX"])
+          y2 <- as.numeric(BCI.Q.df[j,]["PY"])
+          spID2 <- BCI.Q.df[j,]["Latin"]
+          dist <- sqrt(((x1-x2)^2)+((y1-y2)^2))
+          neighbor <- cbind(spID, spID2, x2, y2, dist)
+          temp.neighbor.df <- rbind(temp.neighbor.df, neighbor)
+  }
   
-  nrows <- nrow(dat)
-  for(j in 1:nrows) {
-    
-      x2 <- as.numeric(dat[j,]["PX"])
-      y2 <- as.numeric(dat[j,]["PY"])
-      spID2 <- dat[j,]["Latin"]
-      
-      #print(x2)
-      #print(y2)
-      #print(spID2)
-      #break
-      
-      dist <- sqrt(((x1-x2)^2)+((y1-y2)^2))
-      zz <- paste(spID2, x2, y2, dist)
-      zz.dat <- rbind(zz)
+  temp.neighbor.df <- temp.neighbor.df[order(temp.neighbor.df$dist),]
+  neighbor.df <- rbind(neighbor.df, temp.neighbor.df[1:4,-3:-5])
     }
-  
-  print(zz.dat)
-  break()
-  
 }
 
 
+
+
+# Sample indivudals from BCI #
+ilist <- BCI.Q.df[sample(nrow(BCI.Q.df), size = 100, replace = FALSE), ]
+
+# Intermediate data table with indivudal and 4 closest neighboors # 
+neighbor.df <- data.frame()
+
+# For loop to sample 1 individual and 4 nearest neighbors # 
+nrows.1 <- nrow(ilist)
+nrows.2 <- nrow(BCI.Q.df) # for every individual in quadrat 0, find dist #
+
+for(i in 1:nrows.1) {   
+  x1 <- as.numeric(ilist[i,]["PX"])
+  y1 <- as.numeric(ilist[i,]["PY"])
+  spID <- ilist[i,]["Latin"]
+  No <- ilist[i,]["No."]
+  individual <- cbind(No, spID, x1, y1)
+  
+  temp.neighbor.df <- data.frame()
+ 
+  for(j in 1:nrows.2) {
+      x2 <- as.numeric(BCI.Q.df[j,]["PX"])
+      y2 <- as.numeric(BCI.Q.df[j,]["PY"])
+      spID2 <- BCI.Q.df[j,]["Latin"]
+      No2 <- BCI.Q.df[j,]["No."]
+      dist <- sqrt(((x1-x2)^2)+((y1-y2)^2))
+      neighbor <- cbind(spID, No, spID2, No2, x2, y2, dist)
+      temp.neighbor.df <- rbind(temp.neighbor.df, neighbor)
+  }
+  
+  temp.neighbor.df <- temp.neighbor.df[order(temp.neighbor.df$dist),]
+  neighbor.df <- rbind(neighbor.df, temp.neighbor.df[2:5,-5:-7])
+}
+
+# Rename column #
+colnames(neighbor.df) <- c("Individual", "Individual No.", "Neighbors", "Neighbors No.")
+
+# Making count dataframe table based on neighbor.df #
+count.Q.df <- group_by(neighbor.df, Individual) %>% count(Neighbors) %>% spread(key=Neighbors, value=n, fill=0)
+
+# use neighbor.dat to ...
+# the values in neighbor.temp.dat with row ID's 
+# neighbor.temp.dat --> resemblance matrix from neighbor.dat
+# fast way to compare tupples (few numbers enclosed in ())
+# any(prev.combo==paste(toString(11),'-',toString(22)))
 
 ```
 
