@@ -30,12 +30,11 @@ BCI <- read.delim("BCI2010.txt", header=T)
 ## Transform census data into site by species matrix ##
 BCI.SbyS <- group_by(BCI, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
 
+BCI.SBS <- BCI.SbyS[ ,-1]
+
 # Slim down BCI data frame #
-BCI.dat <- subset(BCI, select = c(Latin, Quadrat, PX, PY))```
+BCI.dat <- subset(BCI, select = c(Latin, Quadrat, PX, PY))
 
-## Including Plots
-
-You can also embed plots, for example:
 
 ```  
 
@@ -93,6 +92,43 @@ for(i in 1:nrows.1) {
 
 
 ```
+
+Alpha Diversity business below
+
+```{r}
+#Good's coverage
+C <- function(x = ""){
+  1 - (sum(x == 1) / rowSums(x))
+}
+
+#Coverage ranges from 0.75 - 0.99
+
+#Rank Abundance
+
+####for one site
+BCI2=as.data.frame(BCI.SBS)
+Racresults=radfit(BCI2[100,])
+plot(Racresults,las=1,cex.lab=1.4,cex.axis=1.25)
+
+####for sites combined
+BCI.sum=rowSums(BCI2)
+BCI.sum=as.data.frame(BCI.sum)
+BCI.sum=t(BCI.sum)
+BCI.sum=as.data.frame(BCI.sum)
+
+Racresults=radfit(BCI.sum)
+plot(Racresults,las=1,cex.lab=1.4,cex.axis=1.25)
+
+
+BCIcooc <- cooccur::cooccur(mat = BCI2, type = "spp_site",
+                   thresh = T, spp_names = T)
+
+summary(BCIcooc)
+
+table=prop.table(BCIcooc)
+
+
+
 
 
 
