@@ -13,7 +13,9 @@ setwd("C:/Users/Venus/Github/QB2017BenavidezKuo/data")
 ## Load packages ##
 require("vegan")  
 require("tidyr")
-require(dplyr)
+require("dplyr")
+require("Matrix")
+
 ```
 
 ## Load and wrangle dataset ##
@@ -56,8 +58,11 @@ neighbors <- names(ind.distance[ordered.neighbors])
 # Pulling from BCI.dataset to get Latin name # 
 BCI.df[which(rownames(BCI.df) %in% neighbors), ]
 
+#########################################################
+## Making the squared distance for species ##
 
 
+################################
 
 # Sample indivudals from BCI #
 ilist <- BCI.Q.df[sample(nrow(BCI.Q.df), size = 100, replace = FALSE), ]
@@ -95,8 +100,14 @@ for(i in 1:nrows.1) {
 # Rename column #
 colnames(neighbor.df) <- c("Individual", "Individual No.", "Neighbors", "Neighbors No.")
 
+# Make squared matrix # 
+# How to declare empty 2d dataframe #
+
+
+
+
 # Making count dataframe table based on neighbor.df #
-count.Q.df <- group_by(neighbor.df, Individual) %>% count(Neighbors) %>% spread(key=Neighbors, value=n, fill=0)
+count.Q.df <- group_by(neighbor.df, Individual) %>% count(Neighbors) #%>% spread(key=Neighbors, value=n, fill=0)
 
 
 
@@ -109,7 +120,11 @@ count.Q.df <- group_by(neighbor.df, Individual) %>% count(Neighbors) %>% spread(
 
 ```
 
+
+
 ## For Loop to randomly sample quadrats, individuals, and find 4 closest neighbors in data.frame ##
+
+
 
 ```{r}
 # Subetting quadrat 0 dataset #
@@ -149,11 +164,24 @@ for(i in 1:nquad) {
     }
 }
 
+
+
 # Rename column #
 colnames(neighbor.df) <- c("Individual", "Individual No.", "Neighbors", "Neighbors No.")
 
 # Making count dataframe table based on neighbor.df #
 count.Q.df <- group_by(neighbor.df, Individual) %>% count(Neighbors) %>% spread(key=Neighbors, value=n, fill=0)
+
+sparse.matrix <- Matrix(datafile1, sparse = TRUE)
+
+# Turn count dataframe into sparse matrix #
+
+
+```
+
+# Beta Diversity #
+
+``` {r}
 
 # Resemblance matrix #
 rownames(count.Q.df) <- count.Q.df[,1]
@@ -170,6 +198,46 @@ levelplot(as.matrix(BCI.db), aspec ="iso",
 # Generating Null model as metric for species co-occurances #
 
 ```{r}
+# Randomizing the PX and PY coord in BCI.
+BCI.df.random.r <- transform(BCI.df, PX = sample(PX), PY=sample(PY))
 
+
+# For loop to generate randomized neighboors of sampled individuals #
+neighbor.df.r <- data.frame()
+nquadr <- nlevels(BCI$Quadrat)
+for(i in 1:nquadr) {
+  BCI.Q.df <- subset(BCI.df.random, Quadrat == i , select = c(No., Latin, Quadrat, PX, PY))
+  #BCI.df.random <- transform(BCI.Q.df, PX = sample(PX), PY=sample(PY))
+  ilist <- BCI.Q.df[sample(nrow(BCI.Q.df), size = 10, replace = FALSE), ]
+
+  nrows.1 <- nrow(ilist)
+  nrows.2 <- nrow(BCI.Q.df)
+  
+     for(i in 1:nrows.1) {  
+        x1 <- as.numeric(ilist[i,]["PX"])
+        y1 <- as.numeric(ilist[i,]["PY"])
+        spID <- ilist[i,]["Latin"]
+        No <- ilist[i,]["No."]
+        individual <- cbind(No, spID, x1, y1)
+  
+        temp.neighbor.df.r <- data.frame()
+ 
+          for(j in 1:nrows.2) {
+             x2 <- as.numeric(BCI.Q.df[j,]["PX"])
+             y2 <- as.numeric(BCI.Q.df[j,]["PY"])
+             spID2 <- BCI.Q.df[j,]["Latin"]
+             No2 <- BCI.Q.df[j,]["No."]
+             dist <- sqrt(((x1-x2)^2)+((y1-y2)^2))
+             neighbor.r <- cbind(spID, No, spID2, No2, x2, y2, dist)
+             temp.neighbor.df.r <- rbind(temp.neighbor.df.r, neighbor.r)
+  }
+  
+  temp.neighbor.df.r <- temp.neighbor.df.r[order(temp.neighbor.df.r$dist),]
+  neighbor.df.r <- rbind(neighbor.df.r, temp.neighbor.df.r[2:5,-5:-7])
+    }
+}
+
+
+```
 
 
