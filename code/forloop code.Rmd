@@ -10,7 +10,6 @@ output: html_document
 ## Setup work enviroment ##
 rm(list = ls())
 setwd("C:/Users/Venus/Github/QB2017BenavidezKuo/data")
-
 ## Load packages ##
 require("vegan")  
 require("tidyr")
@@ -23,79 +22,62 @@ require("dplyr")
 setwd("C:/Users/Venus/Github/QB2017BenavidezKuo/data")
 # From BCI, Panama from year 2000 #
 BCI <- read.delim("BCI2010.txt", header=T)
-
 # Slim down BCI data frame #
-#BCI.df <- subset(BCI, select = c(No., Latin, Quadrat, PX, PY))
-
-# Make Quadrat into factors #
-BCI$Quadrat <- as.factor(BCI$Quadrat)
-
-# Find which quadrat has min individuals # 
-
+BCI.df <- subset(BCI, select = c(No., Latin, Quadrat, PX, PY))
 ```
 
 ## Using for loop ## 
 # For loop to randomly sample quadrat in BCI.dat #
 
 ```{r}
-# For loop to randomly sample quadrat in BCI.dat #
+# For loop to randomly sample x indivudals in BCI dataframe #
 # Define intermediate data frame to populate in for loop # 
 neighbor.df <- data.frame()
-# Define number of quadrats, 1250 # 
-nquad <- nlevels(BCI$Quadrat)
-# For every quadrat in BCI ... # 
-for(i in 1:nquad) {
-  # Subset the No. Latin, Quadrat, PX, PY from each quadrat # 
-  BCI.Q.df <- subset(BCI, Quadrat == i , select = c(No., Latin, Quadrat, PX, PY)) 
+# Define randomly x individuals from BCI #
+ilist <- BCI.df[sample(nrow(BCI.df), size = 1000, replace = FALSE), ]
+# Define number of individuals sampled in ilist and total individuals in BCI # 
+ilist.rows <- nrow(ilist)
+# For loop begins #
+# For every individual in ilist, find the PX, PY, Latin, and No. to put into individual df #
+for(i in 1:ilist.rows) {   
+  x1 <- as.numeric(ilist[i,]["PX"])
+  y1 <- as.numeric(ilist[i,]["PY"])
+  sp1 <- ilist[i,]["Latin"]
+  No <- ilist[i,]["No."]
+  quad <- as.numeric(ilist[i,]["Quadrat"])
+  #individual <- cbind(No, sp1, quad, x1, y1)
+
+  # Define temporary df for all neighbors in each ilist individual # 
+  temp.neighbor.df <- data.frame()
   
-  # Define value for n using ifelse statement #
-  if (100 < as.numeric(nrow(BCI.Q.df))) {
-      n <- 100;
-  } else if (100 >= as.numeric(nrow(BCI.Q.df))) {
-       n <- as.numeric(nrow(BCI.Q.df))
-  }
-  
-  # Define df of randomly sampled 200 or less individuals from each quadrat #
-  ilist <- BCI.Q.df[sample(nrow(BCI.Q.df), size = n, replace = FALSE), ]
-  
-  # Define number of individuals sampled in ilist and total individuals in sampled quadrat # 
-  nrows.1 <- nrow(ilist)
-  nrows.2 <- nrow(BCI.Q.df)
-  
-    # Inner for loop #
-    # For every individual in ilist, find the PX, PY, Latin, and No. to put into individual df #
-     for(i in 1:nrows.1) {   
-        x1 <- as.numeric(ilist[i,]["PX"])
-        y1 <- as.numeric(ilist[i,]["PY"])
-        spID <- ilist[i,]["Latin"]
-        No <- ilist[i,]["No."]
-        individual <- cbind(No, spID, x1, y1)
+  # Subset that particular quadrat # 
+  Q = subset(BCI.df, Quadrat == quad)
+  # Set the number of individuals in that quadrat # 
+  Q.rows <- nrow(Q)
+  # Inner For loop begins # 
+  # For each indiviudal in quadrat, find the distance between ilist individuals to quadrat individuals#
+      for(j in 1:Q.rows) {
+        x2 <- as.numeric(Q[j,]["PX"])
+        y2 <- as.numeric(Q[j,]["PY"])
+        sp2 <- Q[j,]["Latin"]
+        No2 <- Q[j,]["No."]
+        dist <- sqrt(((x1-x2)^2)+((y1-y2)^2))
+        neighbor <- cbind(sp1, No, sp2, No2, x2, y2, dist)
         
-        # Define temporary df for all neighbors in each ilist individual # 
-        temp.neighbor.df <- data.frame()
- 
-          # Innest for loop # 
-          # For each indiviudal in quadrat, find the distance between ilist individuals to quadrat individuals#
-          for(j in 1:nrows.2) {
-             x2 <- as.numeric(BCI.Q.df[j,]["PX"])
-             y2 <- as.numeric(BCI.Q.df[j,]["PY"])
-             spID2 <- BCI.Q.df[j,]["Latin"]
-             No2 <- BCI.Q.df[j,]["No."]
-             dist <- sqrt(((x1-x2)^2)+((y1-y2)^2))
-             neighbor <- cbind(spID, No, spID2, No2, x2, y2, dist)
-             # Put all neighbors for each invidual into temp.neighbor.df # 
-             temp.neighbor.df <- rbind(temp.neighbor.df, neighbor)
-  }
+        # Put all neighbors for each invidual into temp.neighbor.df # 
+        temp.neighbor.df <- rbind(temp.neighbor.df, neighbor)
   
+    }
+        
   # Order neighbors by closest distance #
   temp.neighbor.df <- temp.neighbor.df[order(temp.neighbor.df$dist),]
   # The four closest neighbors and of each sampled indivudal put into neighbor.df # 
-  neighbor.df <- rbind(neighbor.df, temp.neighbor.df[2:5, -c(5:7)])
-    }
+  neighbor.df <- rbind(neighbor.df, temp.neighbor.df[2:5, -c(5:7)])        
+  
 }
 
-
 ```
+
 
 # Removing redundancy #
 
@@ -113,33 +95,15 @@ onesided.count.Q.df <- onesided.count.Q.df[,-c(1:2)]
 colnames(onesided.count.Q.df) <- c("Individual", "Neighbors")
 #onesided.count.Q.df <- onesided.count.Q.df[c(2,3,1)]
 
-
 # Making count dataframe table based on neighbor.df #
+#count.df <- group_by(neighbor.df, Individual) %>% count(Neighbors)
 count.Q.df <- group_by(onesided.count.Q.df, Individual) %>% count(Neighbors) # %>% spread(key=Neighbors, value=n, fill=0)
-
 ```
 
-
-
-```{r}
-
-# Row Names changed #
-x <- as.matrix(neighbor.df$Individual)
-y <- as.matrix(neighbor.df$Neighbors)
-z <- rbind(c(x,y))
-zz <- t(z)
-z <- t(unique(zz))
-count.Q.df <- count.Q.df[,-1]
-row.names(count.Q.df) <- sort(unique(zz))
-
-
-```
-
-# Making Squared matrix for species
+# Manually making squared species by species matrix # 
 
 ```{r}
 # Make squared matrix for species #
-
 length(unique(neighbor.df$Individual)) 
 length(unique(neighbor.df$Neighbors)) 
 x <- as.matrix(neighbor.df$Individual)
@@ -162,79 +126,85 @@ for(k in nrow.3) {
   which(rownames(distance)==76),which(colnames(distance)!=76
   squared <- count.Q.df[,3]
 }
-
-
-
 ```
 
 # Generating Null model as metric for species co-occurances #
 
 ```{r}
-# Randomizing the PX and PY coord in BCI.
-BCI.df.random.r <- transform(BCI.df, PX = sample(PX), PY=sample(PY))
-
-# For loop to generate randomized neighboors of sampled individuals #
+# For loop to randomly sample x indivudals in BCI dataframe #
+# Define intermediate data frame to populate in for loop # 
 neighbor.df.r <- data.frame()
-nquadr <- nlevels(BCI$Quadrat)
-for(i in 1:nquadr) {
-  BCI.Q.df.r <- subset(BCI.df.random.r, Quadrat == i , select = c(No., Latin, Quadrat, PX, PY))
-  #BCI.df.random <- transform(BCI.Q.df, PX = sample(PX), PY=sample(PY))
-  ilist.r <- BCI.Q.df[sample(nrow(BCI.Q.df), size = 100, replace = FALSE), ]
+# Define randomly x individuals from BCI #
+ilist.r <- BCI.df[sample(nrow(BCI.df.random), size = 1000, replace = FALSE), ]
+# Define number of individuals sampled in ilist and total individuals in BCI # 
+ilist.rows.r <- nrow(ilist.r)
+# Define df to put all bootstrapping results # 
+co.occur.df <- data.frame()
+# Define number of simulations # 
+ct1000 <- 1000 
+# For loop begins #
+# For every individual in ilist, find the PX, PY, Latin, and No. to put into individual df #
+#for(k in ct1000) {
+#  temp.boot.df <- data.frame()
+#  # Randomize all PX and PY values # 
+BCI.df.random <- transform(BCI.df, PX = sample(PX), PY=sample(PY))
+    for(i in 1:ilist.rows.r) {   
+      x1.r <- as.numeric(ilist.r[i,]["PX"])
+      y1.r <- as.numeric(ilist.r[i,]["PY"])
+      sp1.r <- ilist.r[i,]["Latin"]
+      No.r <- ilist.r[i,]["No."]
+      quad.r <- as.numeric(ilist.r[i,]["Quadrat"])
 
-  nrows.1.r <- nrow(ilist.r)
-  nrows.2.r <- nrow(BCI.Q.df.r)
+      # Define temporary df for all neighbors in each ilist individual # 
+      temp.neighbor.df.r <- data.frame()
   
-     for(i in 1:nrows.1.r) {  
-        x1.r <- as.numeric(ilist.r[i,]["PX"])
-        y1.r <- as.numeric(ilist.r[i,]["PY"])
-        spID.r <- ilist.r[i,]["Latin"]
-        No.r <- ilist.r[i,]["No."]
-        individual.r <- cbind(No, spID, x1, y1)
+      # Subset that particular quadrat # 
+      Q.r = subset(BCI.df.random, Quadrat == quad.r)
+      # Set the number of individuals in that quadrat # 
+      Q.rows.r <- nrow(Q.r)
+        # Inner For loop begins # 
+        for(j in 1:Q.rows.r) {
+          x2.r <- as.numeric(Q.r[j,]["PX"])
+          y2.r <- as.numeric(Q.r[j,]["PY"])
+          sp2.r <- Q.r[j,]["Latin"]
+          No2.r <- Q.r[j,]["No."]
+          dist.r <- sqrt(((x1-x2)^2)+((y1-y2)^2))
+          neighbor.r <- cbind(sp1.r, No.r, sp2.r, No2.r, x2.r, y2.r, dist.r)
+        
+          # Put all neighbors for each invidual into temp.neighbor.df # 
+          temp.neighbor.df.r <- rbind(temp.neighbor.df.r, neighbor.r)
+        }
+        
+      # Order neighbors by closest distance #
+      temp.neighbor.df.r <- temp.neighbor.df.r[order(temp.neighbor.df.r$dist),]
+      # The four closest neighbors and of each sampled indivudal put into neighbor.df # 
+      neighbor.df.r <- rbind(neighbor.df.r, temp.neighbor.df.r[2:5, -c(5:7)])        
   
-        temp.neighbor.df.r <- data.frame()
- 
-          for(j in 1:nrows.2.r) {
-             x2.r <- as.numeric(BCI.Q.df.r[j,]["PX"])
-             y2.r <- as.numeric(BCI.Q.df.r[j,]["PY"])
-             spID2.r <- BCI.Q.df.r[j,]["Latin"]
-             No2.r <- BCI.Q.df.r[j,]["No."]
-             dist.r <- sqrt(((x1-x2)^2)+((y1-y2)^2))
-             neighbor.r <- cbind(spID.r, No.r, spID2.r, No2.r, x2.r, y2.r, dist.r)
-             temp.neighbor.df.r <- rbind(temp.neighbor.df.r, neighbor.r)
-  }
-  
-  temp.neighbor.df.r <- temp.neighbor.df.r[order(temp.neighbor.df.r$dist.r),]
-  neighbor.df.r <- rbind(neighbor.df.r, temp.neighbor.df.r[2:5,-5:-7])
     }
-}
+  
+#}
+```
 
+# To check if null model works # 
+
+```{r}
 # Rename column #
 colnames(neighbor.df.r) <- c("Individual", "Individual No.", "Neighbors", "Neighbors No.")
 
+# Removing combinatorial redundancy in neighbor.df #
+# Take Individual and Neighbors species name combination in alphabetical order then n1-n2=n # 
+onesided.count.Q.df.r <- data.frame(t(apply(neighbor.df.r,1,sort)))
+onesided.count.Q.df.r <- onesided.count.Q.df.r[!duplicated(onesided.count.Q.df.r),]
+
+# Reorder dataframe # 
+onesided.count.Q.df.r <- onesided.count.Q.df.r[,-c(1:2)]
+colnames(onesided.count.Q.df.r) <- c("Individual", "Neighbors")
+#onesided.count.Q.df <- onesided.count.Q.df[c(2,3,1)]
+
 # Making count dataframe table based on neighbor.df #
-count.Q.df.r <- group_by(neighbor.df.r, Individual) %>% count(Neighbors) %>% spread(key=Neighbors, value=n, fill=0)
-
-# Row Names changed #
-x.r <- as.matrix(neighbor.df.r$Individual)
-y.r <- as.matrix(neighbor.df.r$Neighbors)
-z.r <- rbind(c(x.r,y.r))
-zz.r <- t(z.r)
-z.r <- t(unique(zz.r))
-count.Q.df.r <- count.Q.df.r[,-1]
-row.names(count.Q.df.r) <- sort(unique(zz.r))
-
-
+#count.df <- group_by(neighbor.df, Individual) %>% count(Neighbors)
+count.Q.df.r <- group_by(onesided.count.Q.df.r, Individual) %>% count(Neighbors) # %>% spread(key=Neighbors, value=n, fill=0)
 ```
-
-
-
-
-
-
-
-
-
-
 
 
 
