@@ -1,0 +1,290 @@
+---
+title: "QB2017_BK_Ranalyses"
+author: "Venus Kuo and Michelle B."
+date: "February 11, 2017"
+output: html_document
+---
+
+```{r}
+## Setup work enviroment ##
+rm(list = ls())
+setwd("C:/Users/Venus/Github/QB2017BenavidezKuo/data")
+
+## Load packages ##
+require("vegan")  
+require("tidyr")
+require("dplyr")
+require("Matrix")
+
+```
+
+## Load and wrangle dataset ##
+
+```{r}
+# From BCI, Panama from year 2000 #
+BCI <- read.delim("BCI2010.txt", header=T)
+
+# Make Quadrat into factors #
+BCI$Quadrat <- as.factor(BCI$Quadrat)
+
+## Transform census data into site by species matrix ##
+#BCI.SbyS <- group_by(BCI, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+
+
+BCI.SBS <- BCI.SbyS[ ,-1]
+
+# Slim down BCI data frame #
+BCI.dat <- subset(BCI, select = c(Latin, Quadrat, PX, PY))
+
+
+# Slim down BCI data frame #
+#BCI.df <- subset(BCI, select = c(No., Latin, Quadrat, PX, PY))
+
+
+```  
+
+## Notes ##
+
+```{r}
+# Manually subsetting # 
+#BCI.Q.dat <- subset(BCI, Quadrat == 0 , select = c(No., Latin, Quadrat, PX, PY))
+
+# Subetting quadrat 0 dataset #
+BCI.Q.df <- subset(BCI, Quadrat == 0, select = c(No., Latin, Quadrat, PX, PY))
+# Defining rownames by No. #
+rownames(BCI.Q.df) <- BCI.Q.df[,1]
+# Removing No. #
+BCI.Q.df <- BCI.Q.df[, -1]
+# finding matrix elucidan distance among all individuals #
+distance <- as.matrix(dist(BCI.Q.df, upper = TRUE))
+# Removing instances of indiviudal distance with self # 
+ind.distance <- distance[which(rownames(distance)==76),which(colnames(distance)!=76)]
+# Ordering the neighbors and taking the first 4 closest #
+ordered.neighbors <- order(ind.distance)[1:4]
+# getting the names of the f closest neighbors #
+neighbors <- names(ind.distance[ordered.neighbors])
+# Pulling from BCI.dataset to get Latin name # 
+BCI.df[which(rownames(BCI.df) %in% neighbors), ]
+
+#########################################################
+## Making the squared distance for species ##
+
+
+################################
+
+# Sample indivudals from BCI #
+ilist <- BCI.Q.df[sample(nrow(BCI.Q.df), size = 100, replace = FALSE), ]
+
+# Intermediate data table with indivudal and 4 closest neighboors # 
+neighbor.df <- data.frame()
+
+# For loop to sample 1 individual and 4 nearest neighbors # 
+nrows.1 <- nrow(ilist)
+nrows.2 <- nrow(BCI.Q.df) # for every individual in quadrat 0, find dist #
+
+for(i in 1:nrows.1) {   
+  x1 <- as.numeric(ilist[i,]["PX"])
+  y1 <- as.numeric(ilist[i,]["PY"])
+  spID <- ilist[i,]["Latin"]
+  No <- ilist[i,]["No."]
+  individual <- cbind(No, spID, x1, y1)
+  
+  temp.neighbor.df <- data.frame()
+ 
+  for(j in 1:nrows.2) {
+      x2 <- as.numeric(BCI.Q.df[j,]["PX"])
+      y2 <- as.numeric(BCI.Q.df[j,]["PY"])
+      spID2 <- BCI.Q.df[j,]["Latin"]
+      No2 <- BCI.Q.df[j,]["No."]
+      dist <- sqrt(((x1-x2)^2)+((y1-y2)^2))
+      neighbor <- cbind(spID, No, spID2, No2, x2, y2, dist)
+      temp.neighbor.df <- rbind(temp.neighbor.df, neighbor)
+  }
+  
+  temp.neighbor.df <- temp.neighbor.df[order(temp.neighbor.df$dist),]
+  neighbor.df <- rbind(neighbor.df, temp.neighbor.df[2:5,-5:-7])
+}
+
+# Rename column #
+colnames(neighbor.df) <- c("Individual", "Individual No.", "Neighbors", "Neighbors No.")
+
+# Make squared matrix # 
+# How to declare empty 2d dataframe #
+
+
+
+
+# Making count dataframe table based on neighbor.df #
+count.Q.df <- group_by(neighbor.df, Individual) %>% count(Neighbors) #%>% spread(key=Neighbors, value=n, fill=0)
+
+
+
+# use neighbor.dat to ...
+# the values in neighbor.temp.dat with row ID's 
+# neighbor.temp.dat --> resemblance matrix from neighbor.dat
+# fast way to compare tupples (few numbers enclosed in ())
+# any(prev.combo==paste(toString(11),'-',toString(22)))
+
+
+```
+
+
+
+## For Loop to randomly sample quadrats, individuals, and find 4 closest neighbors in data.frame ##
+
+
+
+```{r}
+# Subetting quadrat 0 dataset #
+#BCI.Q.df <- subset(BCI, Quadrat == 0, select = c(No., Latin, Quadrat, PX, PY))
+
+# For loop to randomly sample quadrat in BCI.dat # 
+neighbor.df <- data.frame()
+nquad <- nlevels(BCI$Quadrat)
+for(i in 1:nquad) {
+  BCI.Q.df <- subset(BCI, Quadrat == i , select = c(No., Latin, Quadrat, PX, PY))
+  ilist <- BCI.Q.df[sample(nrow(BCI.Q.df), size = 10, replace = FALSE), ]
+
+  nrows.1 <- nrow(ilist)
+  nrows.2 <- nrow(BCI.Q.df)
+  
+     for(i in 1:nrows.1) {   
+        x1 <- as.numeric(ilist[i,]["PX"])
+        y1 <- as.numeric(ilist[i,]["PY"])
+        spID <- ilist[i,]["Latin"]
+        No <- ilist[i,]["No."]
+        individual <- cbind(No, spID, x1, y1)
+  
+        temp.neighbor.df <- data.frame()
+ 
+          for(j in 1:nrows.2) {
+             x2 <- as.numeric(BCI.Q.df[j,]["PX"])
+             y2 <- as.numeric(BCI.Q.df[j,]["PY"])
+             spID2 <- BCI.Q.df[j,]["Latin"]
+             No2 <- BCI.Q.df[j,]["No."]
+             dist <- sqrt(((x1-x2)^2)+((y1-y2)^2))
+             neighbor <- cbind(spID, No, spID2, No2, x2, y2, dist)
+             temp.neighbor.df <- rbind(temp.neighbor.df, neighbor)
+  }
+  
+  temp.neighbor.df <- temp.neighbor.df[order(temp.neighbor.df$dist),]
+  neighbor.df <- rbind(neighbor.df, temp.neighbor.df[2:5,-5:-7])
+    }
+}
+
+
+
+# Rename column #
+colnames(neighbor.df) <- c("Individual", "Individual No.", "Neighbors", "Neighbors No.")
+
+# Making count dataframe table based on neighbor.df #
+count.Q.df <- group_by(neighbor.df, Individual) %>% count(Neighbors) %>% spread(key=Neighbors, value=n, fill=0)
+
+sparse.matrix <- Matrix(datafile1, sparse = TRUE)
+
+# Turn count dataframe into sparse matrix #
+
+
+```
+
+
+Alpha Diversity business below
+
+```{r}
+#Good's coverage
+C <- function(x = ""){
+  1 - (sum(x == 1) / rowSums(x))
+}
+
+#Coverage ranges from 0.75 - 0.99
+
+#Rank Abundance
+
+####for one site
+BCI2=as.data.frame(BCI.SBS)
+Racresults=radfit(BCI2[100,])
+plot(Racresults,las=1,cex.lab=1.4,cex.axis=1.25)
+
+####for sites combined
+BCI.sum=rowSums(BCI2)
+BCI.sum=as.data.frame(BCI.sum)
+BCI.sum=t(BCI.sum)
+BCI.sum=as.data.frame(BCI.sum)
+
+Racresults=radfit(BCI.sum)
+plot(Racresults,las=1,cex.lab=1.4,cex.axis=1.25)
+
+
+BCIcooc <- cooccur::cooccur(mat = BCI2, type = "spp_site",
+                   thresh = T, spp_names = T)
+
+summary(BCIcooc)
+
+table=prop.table(BCIcooc)
+
+
+
+
+# Beta Diversity #
+
+
+
+# Resemblance matrix #
+rownames(count.Q.df) <- count.Q.df[,1]
+tree.co <- count.Q.df[,-1]
+BCI.db <- vegdist(tree.co , method = "bray")
+order <- rev(attr(BCI.db))
+levelplot(as.matrix(BCI.db), aspec ="iso",
+          xlab = "Tree Species", ylab = "Tree Species", scales=list(cex=0.5), 
+          main = "Bray-Curtis Distance")
+
+
+
+```
+
+# Generating Null model as metric for species co-occurances #
+
+```{r}
+# Randomizing the PX and PY coord in BCI.
+BCI.df.random.r <- transform(BCI.df, PX = sample(PX), PY=sample(PY))
+
+
+# For loop to generate randomized neighboors of sampled individuals #
+neighbor.df.r <- data.frame()
+nquadr <- nlevels(BCI$Quadrat)
+for(i in 1:nquadr) {
+  BCI.Q.df <- subset(BCI.df.random, Quadrat == i , select = c(No., Latin, Quadrat, PX, PY))
+  #BCI.df.random <- transform(BCI.Q.df, PX = sample(PX), PY=sample(PY))
+  ilist <- BCI.Q.df[sample(nrow(BCI.Q.df), size = 10, replace = FALSE), ]
+
+  nrows.1 <- nrow(ilist)
+  nrows.2 <- nrow(BCI.Q.df)
+  
+     for(i in 1:nrows.1) {  
+        x1 <- as.numeric(ilist[i,]["PX"])
+        y1 <- as.numeric(ilist[i,]["PY"])
+        spID <- ilist[i,]["Latin"]
+        No <- ilist[i,]["No."]
+        individual <- cbind(No, spID, x1, y1)
+  
+        temp.neighbor.df.r <- data.frame()
+ 
+          for(j in 1:nrows.2) {
+             x2 <- as.numeric(BCI.Q.df[j,]["PX"])
+             y2 <- as.numeric(BCI.Q.df[j,]["PY"])
+             spID2 <- BCI.Q.df[j,]["Latin"]
+             No2 <- BCI.Q.df[j,]["No."]
+             dist <- sqrt(((x1-x2)^2)+((y1-y2)^2))
+             neighbor.r <- cbind(spID, No, spID2, No2, x2, y2, dist)
+             temp.neighbor.df.r <- rbind(temp.neighbor.df.r, neighbor.r)
+  }
+  
+  temp.neighbor.df.r <- temp.neighbor.df.r[order(temp.neighbor.df.r$dist),]
+  neighbor.df.r <- rbind(neighbor.df.r, temp.neighbor.df.r[2:5,-5:-7])
+    }
+}
+
+
+```
+
+

@@ -21,12 +21,12 @@ geometry: margin=2.54cm
 12. By Thursday March 9, 23:59, please submit the completed assignment by creating a **pull request** via GitHub. Your pull request should include this file *Project_assignment.Rmd* and the PDF output of `Knitr` (*Project_assignment.pdf*). 
 
 ## ABSTRACT
-
+Perhaps the most well-documented neutral model of biodiversity is the Unified Theory of Biodiversity (NT) which postulates that species richness and abundance is generated exclusively through genetic drift between species.  Consequently, one should expect that a community governed by NT would have predominantly random species associations at any given point in time.  For this study we analyzed tree species associations on Barro Colorado Island in Panama.  Among sites, we found that only 21.3% of tree associations are nonrandom, of which 64.64% were positive associations and 35.36% were negative associations.  Within site we found SO MANY COOL THINGS! Based on these results we conlcude SOMETHING WE NEED TO DETERMINE WHEN WE HAVE ALL RESULTS!  These results SUPPORT? that NT is potentially applicable to this location.  Future reserarch should focus on determining the rate of community change over time on BCI to determine if speciation events and community change is consistent with the neurtral theory model.   
 
 
 ## 1) INTRODUCTION
 
-Hubbell (2001) developed the unified Neutral Theory of Biodiversity to explain the diversity and abundances of species in ecological communities by assuming per capita ecological equivalence among all individuals of every species in the same trophic level. NT acts as a null hypothesis for niche-theory by stripping away the complexity and asking: How much of the patterns of ecological communities assembly is explained by species similarity rather than differences (Bell 2000; Hubbell 2001). Hubbell (2006) argues that ecological equivalence can easily evolve in high diversity, dispersal and recruitment limited communities, like in Barro Colorado Island in Panama. In a highly complex environment, species do not evolve or evolves slowly due to low pairwise encounters frequencies between any two species (Hubbell 2006). This idea of species co-occurrence is central to the fundamental assumptions of NT, and we aim to explore if indeed this co-occurrences between species on BCI is just by random change. We hypothesize that ff community composition in highly diverse ecosystems is primarily determined by neutral processes, then on Barro Colorado Island [1] we expect to observe predominantly random associations for tree species present among sites and [2] we expect that tree species will have an insignificant number of heterospecific cooccurrences if we examine associations at the scale of the individual. 
+Hubbell (2001) developed the unified Neutral Theory of Biodiversity (NT) to explain the diversity and abundances of species in ecological communities by assuming per capita ecological equivalence among all individuals of every species in the same trophic level. NT acts as a null hypothesis for niche-theory by stripping away the complexity and asking: How much of the patterns of ecological communities assembly is explained by species similarity rather than differences (Bell 2000; Hubbell 2001). Hubbell (2006) argues that ecological equivalence can easily evolve in high diversity, dispersal and recruitment limited communities, like in Barro Colorado Island in Panama. In a highly complex environment, species do not evolve or evolves slowly due to low pairwise encounters frequencies between any two species (Hubbell 2006). This idea of species co-occurrence is central to the fundamental assumptions of NT, and we aim to explore if indeed this co-occurrences between species on BCI is just by random change. We hypothesize that ff community composition in highly diverse ecosystems is primarily determined by neutral processes, then on Barro Colorado Island [1] we expect to observe predominantly random associations for tree species present among sites and [2] we expect that tree species will have an insignificant number of heterospecific cooccurrences if we examine associations at the scale of the individual. 
 
 ## 2) SETUP
 
@@ -38,6 +38,7 @@ setwd("C:/Users/Venus/Github/QB2017BenavidezKuo/data")
 require("vegan")  
 require("tidyr")
 require("dplyr")
+require("cooccur")
 ```
 
 ## 3) DESCRIPTION OF DATA
@@ -57,7 +58,33 @@ BCI.df <- subset(BCI, select = c(No., Latin, Quadrat, PX, PY))
 ## 5) ANALYSIS: FIGURES AND STATISTICS
 
 ```{r}
+#Good's coverage
+C <- function(x = ""){
+  1 - (sum(x == 1) / rowSums(x))
+}
 
+#create species by site incidence matrix
+BCI.SbyS <- group_by(BCI, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+BCI.SBS <- BCI.SbyS[ ,-1]
+BCI.SpbS=t(BCI.SBS)
+BCI.SpbS[BCI.SpbS > 0] <- 1
+
+#creating cooccur dataframe 
+BCIcooc <- cooccur::cooccur(mat = BCI.SpbS, type = "spp_site",
++                             thresh = T, spp_names = T)
+
+#species associaitons profile
+cooccur::pair.profile(BCIcooc)
+cooccur::pair.attributes(BCIcooc)
+
+#observed vs expected line graph
+cooccur::obs.v.exp(BCIcooc)
+
+#associations of top four most abundant species
+cooccur::pair(mod = BCIcooc, "Hybanthus prunifolius")
+cooccur::pair(mod = BCIcooc, "Faramea occidentalis")
+cooccur::pair(mod = BCIcooc, "Desmopsis panamensis")
+cooccur::pair(mod = BCIcooc, "Trichilia tuberculata")
 
 ```
 
@@ -69,6 +96,10 @@ BCI.df <- subset(BCI, select = c(No., Latin, Quadrat, PX, PY))
 
 Bell, Graham. "The distribution of abundance in neutral communities." The American Naturalist 155.5 (2000): 606-617.
 
+Griffith, Veech, and Marsh (2016). cooccur: Probabilistic Species Co-Occurrence Analysis in R. Journal of Statistical Software, 69(2), 1-17. doi:10.18637/jss.v069.c02
+
 Hubbell, Stephen P. "Neutral theory and the evolution of ecological equivalence." Ecology 87.6 (2006): 1387-1398.
 
 Hubbell, S.P. (2001). A Unified Neutral Theory of Biodiversity and Biogeography. Princeton University Press. Princeton NJ.
+
+Veech (2013). A probabilistic model for analysing species co-occurrence. Global Ecology and Biogeography, DOI: 10.1111/j.1466-8238.2012.00789.
