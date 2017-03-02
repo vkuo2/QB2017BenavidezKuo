@@ -1,0 +1,74 @@
+---
+title: "Co-occurrence of tree species in a small tropical island "
+author: "Venus Kuo and Michelle Benavidez, Quantitative Biodiversity, Indiana University"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: pdf_document
+geometry: margin=2.54cm
+---
+
+## Directions:
+1. Change "Add title of your project" on line 2 (above) to the name of your project.
+2. Change "Add names of team members" on line 3 (above) to the names of team members in your project.
+3. Write a <250 word Abstract describing your team's research.
+4. Write a 1-2 paragraph Introduction providing some background and context for your project.
+5. Set up your working enviroment (set directory, load packages) using the `/Week8-Projects` folder. 
+6. Provide a brief (~1 paragraph) description of the dataset.
+7. Load the dataset and process in ways necessary for any initial analyses.
+8. Use well annotated R chunks to analyze data, make figures, and peform statistics needed to address your quesstions and hypotheses. 
+9. Write a Discussion and Conclusion section to address the questions and hypotheses that you outlined in you outlined in your Abstract and Introuction.
+10. Include citations in the Reference section.
+11. Delete the text in this Directions section.
+12. By Thursday March 9, 23:59, please submit the completed assignment by creating a **pull request** via GitHub. Your pull request should include this file *Project_assignment.Rmd* and the PDF output of `Knitr` (*Project_assignment.pdf*). 
+
+## ABSTRACT
+
+
+
+## 1) INTRODUCTION
+
+Hubbell (2001) developed the unified Neutral Theory of Biodiversity to explain the diversity and abundances of species in ecological communities by assuming per capita ecological equivalence among all individuals of every species in the same trophic level. NT acts as a null hypothesis for niche-theory by stripping away the complexity and asking: How much of the patterns of ecological communities assembly is explained by species similarity rather than differences (Bell 2000; Hubbell 2001). Hubbell (2006) argues that ecological equivalence can easily evolve in high diversity, dispersal and recruitment limited communities, like in Barro Colorado Island in Panama. In a highly complex environment, species do not evolve or evolves slowly due to low pairwise encounters frequencies between any two species (Hubbell 2006). This idea of species co-occurrence is central to the fundamental assumptions of NT, and we aim to explore if indeed this co-occurrences between species on BCI is just by random change. We hypothesize that ff community composition in highly diverse ecosystems is primarily determined by neutral processes, then on Barro Colorado Island [1] we expect to observe predominantly random associations for tree species present among sites and [2] we expect that tree species will have an insignificant number of heterospecific cooccurrences if we examine associations at the scale of the individual. 
+
+## 2) SETUP
+
+```{r}
+## Setup work enviroment ##
+rm(list = ls())
+setwd("C:/Users/Venus/Github/QB2017BenavidezKuo/data")
+## Load packages ##
+require("vegan")  
+require("tidyr")
+require("dplyr")
+```
+
+## 3) DESCRIPTION OF DATA
+
+We took 2010 census BCI 50ha plot dataset that contains long form individual ID number, Species name, Quadrat, PX and PY 50 ha coordinate grid, date censused, status, and DBH. I subsetted the dataset to just include the individual ID number, species name (Latin), Quadrat, and the PX and PY coordinates. 
+
+## 4) LOAD THE DATA
+
+```{r}
+setwd("C:/Users/Venus/Github/QB2017BenavidezKuo/data")
+# From BCI, Panama from year 2000 #
+BCI <- read.delim("BCI2010.txt", header=T)
+# Slim down BCI data frame #
+BCI.df <- subset(BCI, select = c(No., Latin, Quadrat, PX, PY))
+```
+
+## 5) ANALYSIS: FIGURES AND STATISTICS
+
+```{r}
+
+
+```
+
+## 6) DISCUSSION AND CONCLUSION
+
+
+
+## 7) REFERENCES
+
+Bell, Graham. "The distribution of abundance in neutral communities." The American Naturalist 155.5 (2000): 606-617.
+
+Hubbell, Stephen P. "Neutral theory and the evolution of ecological equivalence." Ecology 87.6 (2006): 1387-1398.
+
+Hubbell, S.P. (2001). A Unified Neutral Theory of Biodiversity and Biogeography. Princeton University Press. Princeton NJ.
