@@ -14,6 +14,7 @@ setwd("C:/Users/Venus/Github/QB2017BenavidezKuo/data")
 require("vegan")  
 require("tidyr")
 require("dplyr")
+require("dixon")
 ```
 
 ## Load dataset ##
@@ -24,6 +25,19 @@ setwd("C:/Users/Venus/Github/QB2017BenavidezKuo/data")
 BCI <- read.delim("BCI2010.txt", header=T)
 # Slim down BCI data frame #
 BCI.df <- subset(BCI, select = c(No., Latin, Quadrat, PX, PY))
+
+
+```
+
+
+```{r}
+BCI.df.r <- subset(BCI, select = c(PX, PY, Latin))
+ilist.r <- BCI.df.r[sample(nrow(BCI.df.r), size = 250, replace = FALSE), ]
+colnames(ilist.r) <- c("x", "y", "sp")
+
+# Use dixon package # 
+dixon(ilist.r, nsim = 99, fortran = FALSE)
+
 ```
 
 ## Using for loop ## 
@@ -71,8 +85,9 @@ for(i in 1:ilist.rows) {
         
   # Order neighbors by closest distance #
   temp.neighbor.df <- temp.neighbor.df[order(temp.neighbor.df$dist),]
+  
   # The four closest neighbors and of each sampled indivudal put into neighbor.df # 
-  neighbor.df <- rbind(neighbor.df, temp.neighbor.df[2:5, -c(5:7)])        
+  neighbor.df <- rbind(neighbor.df, temp.neighbor.df[2:5, -c(5:7)])     
   
 }
 
@@ -116,38 +131,37 @@ squared <- matrix(0 , nrow = length(unique(zz)), ncol=length(unique(zz)))
 row.names(squared) <- sort(unique(zz))
 colnames(squared) <- sort(z)
 
-
-# Populate the squared matrix with coocurrance information from neighbor.df #
-nrow.3 <- nrow(count.Q.df)
-for(k in nrow.3) {
-  n <- as.numeric(count.Q.df[k,]["n"])
-  squared[which(rownames(count.Q.df[k,]))]
-  squared[which(rownames(count))]  <- count.Q.df[k,]["n"]
-  which(rownames(distance)==76),which(colnames(distance)!=76
-  squared <- count.Q.df[,3]
-}
 ```
 
 # Generating Null model as metric for species co-occurances #
 
+
+
+
+
+
+
+
 ```{r}
-# For loop to randomly sample x indivudals in BCI dataframe #
-# Define intermediate data frame to populate in for loop # 
-neighbor.df.r <- data.frame()
-# Define randomly x individuals from BCI #
-ilist.r <- BCI.df[sample(nrow(BCI.df.random), size = 1000, replace = FALSE), ]
-# Define number of individuals sampled in ilist and total individuals in BCI # 
-ilist.rows.r <- nrow(ilist.r)
 # Define df to put all bootstrapping results # 
-co.occur.df <- data.frame()
+co.occur.df <- NA
 # Define number of simulations # 
-ct1000 <- 1000 
+ct100 <- 2
 # For loop begins #
 # For every individual in ilist, find the PX, PY, Latin, and No. to put into individual df #
-#for(k in ct1000) {
-#  temp.boot.df <- data.frame()
-#  # Randomize all PX and PY values # 
-BCI.df.random <- transform(BCI.df, PX = sample(PX), PY=sample(PY))
+# Outter for loop to bootstrap null model xx times #
+for(k in 1:ct100) {
+  
+  # Randomize all PX and PY values # 
+  BCI.df.random <- transform(BCI.df, PX = sample(PX), PY=sample(PY))
+  # Define intermediate data frame to populate in for loop # 
+  neighbor.df.r <- data.frame()
+  # Define randomly x individuals from BCI #
+  ilist.r <- BCI.df.random[sample(nrow(BCI.df.random), size = 10, replace = TRUE), ]
+  # Define number of individuals sampled in ilist and total individuals in BCI # 
+  ilist.rows.r <- nrow(ilist.r)
+  
+    # Inner for loop to get information about randomly sampled individual #
     for(i in 1:ilist.rows.r) {   
       x1.r <- as.numeric(ilist.r[i,]["PX"])
       y1.r <- as.numeric(ilist.r[i,]["PY"])
@@ -162,13 +176,13 @@ BCI.df.random <- transform(BCI.df, PX = sample(PX), PY=sample(PY))
       Q.r = subset(BCI.df.random, Quadrat == quad.r)
       # Set the number of individuals in that quadrat # 
       Q.rows.r <- nrow(Q.r)
-        # Inner For loop begins # 
+        # Inner For loop to get four closest neighbors for each individual sampled # 
         for(j in 1:Q.rows.r) {
           x2.r <- as.numeric(Q.r[j,]["PX"])
           y2.r <- as.numeric(Q.r[j,]["PY"])
           sp2.r <- Q.r[j,]["Latin"]
           No2.r <- Q.r[j,]["No."]
-          dist.r <- sqrt(((x1-x2)^2)+((y1-y2)^2))
+          dist.r <- sqrt(((x1.r-x2.r)^2)+((y1.r-y2.r)^2))
           neighbor.r <- cbind(sp1.r, No.r, sp2.r, No2.r, x2.r, y2.r, dist.r)
         
           # Put all neighbors for each invidual into temp.neighbor.df # 
@@ -179,13 +193,32 @@ BCI.df.random <- transform(BCI.df, PX = sample(PX), PY=sample(PY))
       temp.neighbor.df.r <- temp.neighbor.df.r[order(temp.neighbor.df.r$dist),]
       # The four closest neighbors and of each sampled indivudal put into neighbor.df # 
       neighbor.df.r <- rbind(neighbor.df.r, temp.neighbor.df.r[2:5, -c(5:7)])        
-  
+      
+
     }
   
-#}
+        # Rename column #
+        colnames(neighbor.df.r) <- c("Individual", "Individual No.", "Neighbors", "Neighbors No.")
+
+        # Removing combinatorial redundancy in neighbor.df #
+        # Take Individual and Neighbors species name combination in alphabetical order then n1-n2=n # 
+        onesided.count.Q.df.r <- data.frame(t(apply(neighbor.df.r,1,sort)))
+        onesided.count.Q.df.r <- onesided.count.Q.df.r[!duplicated(onesided.count.Q.df.r),]
+
+        # Reorder dataframe # 
+        onesided.count.Q.df.r <- onesided.count.Q.df.r[,-c(1:2)]
+        colnames(onesided.count.Q.df.r) <- c("Individual", "Neighbors")
+        #onesided.count.Q.df <- onesided.count.Q.df[c(2,3,1)]
+
+        # Making count dataframe table based on neighbor.df #
+        #count.df <- group_by(neighbor.df, Individual) %>% count(Neighbors)
+        count.Q.df.r <- group_by(onesided.count.Q.df.r, Individual) %>% count(Neighbors) # %>% spread(key=Neighbors,         value=n, fill=0)
+  
+        co.occur.df <- cbind(co.occur.df, count.Q.df.r)
+
+}
 ```
 
-# To check if null model works # 
 
 ```{r}
 # Rename column #
@@ -206,7 +239,12 @@ colnames(onesided.count.Q.df.r) <- c("Individual", "Neighbors")
 count.Q.df.r <- group_by(onesided.count.Q.df.r, Individual) %>% count(Neighbors) # %>% spread(key=Neighbors, value=n, fill=0)
 ```
 
+# Analyses of bootstrapped null model compared with empirical # 
+
+```{r}
 
 
+
+```
 
 

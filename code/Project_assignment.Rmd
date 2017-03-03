@@ -51,7 +51,10 @@ setwd("C:/Users/Venus/Github/QB2017BenavidezKuo/data")
 # From BCI, Panama from year 2000 #
 BCI <- read.delim("BCI2010.txt", header=T)
 # Slim down BCI data frame #
-BCI.df <- subset(BCI, select = c(No., Latin, Quadrat, PX, PY))
+BCI.df <- subset(BCI, select = c(Latin, Quadrat))
+#
+BCI.df.random <- transform(BCI.df, Quadrat = sample(Quadrat))
+BCI.df.random.t <- t(BCI.df.random)
 ```
 
 ## 5) ANALYSIS: FIGURES AND STATISTICS
