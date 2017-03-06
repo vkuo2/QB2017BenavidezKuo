@@ -58,6 +58,10 @@ BCI.df <- subset(BCI, select = c(Latin, Quadrat))
 ## 5) ANALYSIS: FIGURES AND STATISTICS
 
 ```{r}
+
+#pretty little chart of trees ploted of the plot
+plot(BCI$PX,BCI$PY, col=as.numeric(BCI$Latin),pch = 19, cex = 0.3, xlab = "", ylab = "", main = "Tree Species on the 50 Hectare Plot in Barro Colorado Island")
+
 #Good's coverage
 C <- function(x = ""){
   1 - (sum(x == 1) / rowSums(x))
