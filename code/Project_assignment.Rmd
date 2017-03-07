@@ -21,12 +21,12 @@ geometry: margin=2.54cm
 12. By Thursday March 9, 23:59, please submit the completed assignment by creating a **pull request** via GitHub. Your pull request should include this file *Project_assignment.Rmd* and the PDF output of `Knitr` (*Project_assignment.pdf*). 
 
 ## ABSTRACT
-Perhaps the most well-documented neutral model of biodiversity is the Unified Theory of Biodiversity (NT) which postulates that species richness and abundance is generated exclusively through genetic drift between species.  Consequently, one should expect that a community governed by NT would have predominantly random species associations at any given point in time.  For this study we analyzed tree species associations on Barro Colorado Island in Panama.  Among sites, we found that only 21.3% of tree associations are nonrandom, of which 64.64% were positive associations and 35.36% were negative associations.  Within site we found SO MANY COOL THINGS! Based on these results we conlcude SOMETHING WE NEED TO DETERMINE WHEN WE HAVE ALL RESULTS!  These results SUPPORT? that NT is potentially applicable to this location.  Future reserarch should focus on determining the rate of community change over time on BCI to determine if speciation events and community change is consistent with the neurtral theory model.   
-
+Perhaps the most well-documented neutral model of biodiversity is the Unified Neutral Theory of Biodiversity (UNTB), however there is some controversy concerning the utility of UNTB compared to other null models og biodiversity.  UNTB postulates that species richness and abundance is generated exclusively through genetic drift between species.  Consequently, one should expect that a community governed by UNTB would have predominantly random species associations at any given point in time.  For this study we analyzed tree species associations on Barro Colorado Island in Panama.  Rank abundance of all individuals in the study site followed a log normal distribution.  Among sites, we found that only 21.3% of tree associations were nonrandom, of which 64.64% were positive associations and 35.36% were negative associations.  The frequency of this distribution of associaitons was not significantly different from the frequencies of a randomly generated distribution (x2 = 0.336, df = 1, p = 0.562).  Future research should focus on comparing various null distribution models to see if UNTB better explains this seemingly random distribution.       
 
 ## 1) INTRODUCTION
 
-Hubbell (2001) developed the unified Neutral Theory of Biodiversity (NT) to explain the diversity and abundances of species in ecological communities by assuming per capita ecological equivalence among all individuals of every species in the same trophic level. NT acts as a null hypothesis for niche-theory by stripping away the complexity and asking: How much of the patterns of ecological communities assembly is explained by species similarity rather than differences (Bell 2000; Hubbell 2001). Hubbell (2006) argues that ecological equivalence can easily evolve in high diversity, dispersal and recruitment limited communities, like in Barro Colorado Island in Panama. In a highly complex environment, species do not evolve or evolves slowly due to low pairwise encounters frequencies between any two species (Hubbell 2006). This idea of species co-occurrence is central to the fundamental assumptions of NT, and we aim to explore if indeed this co-occurrences between species on BCI is just by random change. We hypothesize that ff community composition in highly diverse ecosystems is primarily determined by neutral processes, then on Barro Colorado Island [1] we expect to observe predominantly random associations for tree species present among sites and [2] we expect that tree species will have an insignificant number of heterospecific cooccurrences if we examine associations at the scale of the individual. 
+Hubbell (2001) developed the unified Neutral Theory of Biodiversity (UNTB) to explain the diversity and abundances of species in ecological communities by assuming per capita ecological equivalence among all individuals of every species in the same trophic level. UNTB acts as a null hypothesis for niche-theory by stripping away the complexity and asking: How much of the patterns of ecological communities assembly is explained by species similarity rather than differences (Bell 2000; Hubbell 2001). Hubbell (2006) argues that ecological equivalence can easily evolve in high diversity, dispersal and recruitment limited communities, like in Barro Colorado Island in Panama. In a highly complex environment, species do not evolve or evolves slowly due to low pairwise encounters frequencies between any two species (Hubbell 2006). This idea of species co-occurrence is central to the fundamental assumptions of UNTB, and we aim to explore if indeed this co-occurrences between species on BCI is just by random change. We hypothesize that if community composition in highly diverse ecosystems is primarily determined by neutral processes, then on Barro Colorado Island we expect to observe predominantly random associations for tree species present among sites.
+
 
 ## 2) SETUP
 
@@ -39,28 +39,32 @@ require("vegan")
 require("tidyr")
 require("dplyr")
 require("cooccur")
+require("spatstat")
+require("dixon")
 ```
 
 ## 3) DESCRIPTION OF DATA
+
+Barro Colorado Island (BCI) was formed in the middle of Gatun Lake (9.1521° N, 79.8465° W) as a reult of the construction of the Panama Canal in Panama.  Since 1923 this island has been teh focus of extensive ecological research.  In 1980, a Forest Dynamics Plot was established for the purpose of studying a variety of aspects of tropical ecology.  The first complete tree census was completed in 1982 and have been repeated every 10 years since.  All trees and shurbs > 1 cm in diameter are identifed and counted for this census.  
 
 We took 2010 census BCI 50ha plot dataset that contains long form individual ID number, Species name, Quadrat, PX and PY 50 ha coordinate grid, date censused, status, and DBH. I subsetted the dataset to just include the individual ID number, species name (Latin), Quadrat, and the PX and PY coordinates. 
 
 ## 4) LOAD THE DATA
 
 ```{r}
-setwd("C:/Users/Venus/Github/QB2017BenavidezKuo/data")
-# From BCI, Panama from year 2000 #
+# From BCI, Panama from year 2010 #
 BCI <- read.delim("BCI2010.txt", header=T)
 # Slim down BCI data frame #
 BCI.df <- subset(BCI, select = c(Latin, Quadrat))
-#
-BCI.df.random <- transform(BCI.df, Quadrat = sample(Quadrat))
-BCI.df.random.t <- t(BCI.df.random)
 ```
 
 ## 5) ANALYSIS: FIGURES AND STATISTICS
 
 ```{r}
+
+#pretty little chart of trees ploted of the plot
+plot(BCI$PX,BCI$PY, col=as.numeric(BCI$Latin),pch = 19, cex = 0.3, xlab = "", ylab = "", main = "Tree Species on the 50 Hectare Plot in Barro Colorado Island")
+
 #Good's coverage
 C <- function(x = ""){
   1 - (sum(x == 1) / rowSums(x))
@@ -73,14 +77,13 @@ BCI.SpbS=t(BCI.SBS)
 BCI.SpbS[BCI.SpbS > 0] <- 1
 
 #creating cooccur dataframe 
-BCIcooc <- cooccur::cooccur(mat = BCI.SpbS, type = "spp_site",
-+                             thresh = T, spp_names = T)
+BCIcooc <- cooccur::cooccur(mat = BCI.SpbS, type = "spp_site", thresh = T, spp_names = T)
 
 #species associaitons profile
 cooccur::pair.profile(BCIcooc)
 cooccur::pair.attributes(BCIcooc)
 
-#observed vs expected line graph
+#observed vs expected line graph - for observed distributions
 cooccur::obs.v.exp(BCIcooc)
 
 #associations of top four most abundant species
@@ -89,10 +92,63 @@ cooccur::pair(mod = BCIcooc, "Faramea occidentalis")
 cooccur::pair(mod = BCIcooc, "Desmopsis panamensis")
 cooccur::pair(mod = BCIcooc, "Trichilia tuberculata")
 
-```
+#Random matrix assortment and cooccur dataframe
+BCI.df.random <- transform(BCI.df, Quadrat = sample(Quadrat))
+BCI.SbyS.r <- group_by(BCI.df.random, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+BCI.SBS.r <- BCI.SbyS.r[ ,-1]
+BCI.SpbS.r <- t(BCI.SBS.r)
+BCI.SpbS.r[BCI.SpbS.r > 0] <- 1
+BCIcooc.rand <- cooccur::cooccur(mat = BCI.SpbS.r, type = "spp_site", thresh = T, spp_names = T)
+summary(BCIcooc.rand)
 
+
+
+#chisquare between frequencies of random resesults and observed results
+exp.pos <- 1669/31620
+exp.neg <- 573/31620
+exp.rand <- 29378/31620
+obs.pos <- 3742/27202
+obs.neg <- 2047/27202
+obs.rand <- 2143/2702
+
+x2 <- (((obs.pos-exp.pos)^2)/exp.pos) + (((obs.neg-exp.neg)^2)/exp.neg) + (((obs.rand-exp.rand)^2)/exp.rand)
+
+1-pchisq(x2,1)
+
+
+#pretty pictures of what overall tree density looks like
+x <- BCI$PX
+y <- BCI$PY
+p <- ppp(x,y,c(0,1000),c(0,500))
+p2 <- unique(p)
+den <- density(p2, sigma = 70)
+plot(den)
+plot(den, add = T, cex = 0.5)
+
+
+contour(den)
+persp(den)
+
+#map of four most abundant trees
+
+color <- brewer.pal(4,"Set1")
+BCI.xy <- subset(BCI, select = c(Latin, PX, PY))
+FA <- c("Hybanthus prunifolius","Faramea occidentalis","Desmopsis panamensis","Trichilia tuberculata")
+Four <- BCI.xy[BCI.xy$Latin %in% FA,]
+
+x2 <- Four$PX
+y2 <- Four$PY
+p2 <- ppp(x2,y2,c(0,1000),c(0,500))
+p22 <- unique(p2)
+den2 <- density(p22, sigma = 70)
+plot(den2)
+plot(den2, add = T, cex = 0.5)
+
+plot(Four$PX,Four$PY, col=color,pch = 19, cex = 0.3, xlab = "", ylab = "", main = "Four most Abundant Species on the 50 Hectare Plot in Barro Colorado Island")
+```
 ## 6) DISCUSSION AND CONCLUSION
 
+Results from the study suggest that tree community composition on Barro Colorado Island in Panama is randomly distributed.  However, these results do not necessarily support the assumptions of the Unified Theory of Biodiversity and more research is needed. 
 
 
 ## 7) REFERENCES
