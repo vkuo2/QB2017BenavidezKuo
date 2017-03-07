@@ -146,6 +146,80 @@ plot(den2, add = T, cex = 0.5)
 
 plot(Four$PX,Four$PY, col=color,pch = 19, cex = 0.3, xlab = "", ylab = "", main = "Four most Abundant Species on the 50 Hectare Plot in Barro Colorado Island")
 ```
+
+# Observed co occurance paterns on the small grain scale # 
+
+``` {r}
+# For loop to randomly sample x indivudals in BCI dataframe #
+# Define intermediate data frame to populate in for loop # 
+neighbor.df <- data.frame()
+# Define randomly x individuals from BCI #
+ilist <- BCI.df[sample(nrow(BCI.df), size = 1000, replace = FALSE), ]
+# Define number of individuals sampled in ilist and total individuals in BCI # 
+ilist.rows <- nrow(ilist)
+# For loop begins #
+# For every individual in ilist, find the PX, PY, Latin, and No. to put into individual df #
+for(i in 1:ilist.rows) {   
+  x1 <- as.numeric(ilist[i,]["PX"])
+  y1 <- as.numeric(ilist[i,]["PY"])
+  sp1 <- ilist[i,]["Latin"]
+  No <- ilist[i,]["No."]
+  quad <- as.numeric(ilist[i,]["Quadrat"])
+  #individual <- cbind(No, sp1, quad, x1, y1)
+
+  # Define temporary df for all neighbors in each ilist individual # 
+  temp.neighbor.df <- data.frame()
+  
+  # Subset that particular quadrat # 
+  Q = subset(BCI.df, Quadrat == quad)
+  # Set the number of individuals in that quadrat # 
+  Q.rows <- nrow(Q)
+  # Inner For loop begins # 
+  # For each indiviudal in quadrat, find the distance between ilist individuals to quadrat individuals#
+      for(j in 1:Q.rows) {
+        x2 <- as.numeric(Q[j,]["PX"])
+        y2 <- as.numeric(Q[j,]["PY"])
+        sp2 <- Q[j,]["Latin"]
+        No2 <- Q[j,]["No."]
+        dist <- sqrt(((x1-x2)^2)+((y1-y2)^2))
+        neighbor <- cbind(sp1, No, sp2, No2, x2, y2, dist)
+        
+        # Put all neighbors for each invidual into temp.neighbor.df # 
+        temp.neighbor.df <- rbind(temp.neighbor.df, neighbor)
+  
+    }
+        
+  # Order neighbors by closest distance #
+  temp.neighbor.df <- temp.neighbor.df[order(temp.neighbor.df$dist),]
+  
+  # The four closest neighbors and of each sampled indivudal put into neighbor.df # 
+  neighbor.df <- rbind(neighbor.df, temp.neighbor.df[2:5, -c(5:7)])     
+  
+}
+
+# Removing redundancy #
+# Rename column #
+colnames(neighbor.df) <- c("Individual", "Individual No.", "Neighbors", "Neighbors No.")
+
+# Removing combinatorial redundancy in neighbor.df #
+# Take Individual and Neighbors species name combination in alphabetical order then n1-n2=n # 
+onesided.count.Q.df <- data.frame(t(apply(neighbor.df,1,sort)))
+onesided.count.Q.df <- onesided.count.Q.df[!duplicated(onesided.count.Q.df),]
+
+# Reorder dataframe # 
+onesided.count.Q.df <- onesided.count.Q.df[,-c(1:2)]
+colnames(onesided.count.Q.df) <- c("Individual", "Neighbors")
+#onesided.count.Q.df <- onesided.count.Q.df[c(2,3,1)]
+
+# Making count dataframe table based on neighbor.df #
+#count.df <- group_by(neighbor.df, Individual) %>% count(Neighbors)
+count.Q.df <- group_by(onesided.count.Q.df, Individual) %>% count(Neighbors) 
+
+## Next steps would include making the null model to compare expected species co-occurance for each species pair with the observed values #
+
+```
+
+
 ## 6) DISCUSSION AND CONCLUSION
 
 Results from the study suggest that tree community composition on Barro Colorado Island in Panama is randomly distributed.  However, these results do not necessarily support the assumptions of the Unified Theory of Biodiversity and more research is needed. 
