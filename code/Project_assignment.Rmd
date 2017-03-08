@@ -21,7 +21,7 @@ geometry: margin=2.54cm
 12. By Thursday March 9, 23:59, please submit the completed assignment by creating a **pull request** via GitHub. Your pull request should include this file *Project_assignment.Rmd* and the PDF output of `Knitr` (*Project_assignment.pdf*). 
 
 ## ABSTRACT
-Perhaps the most well-documented neutral model of biodiversity is the Unified Neutral Theory of Biodiversity (UNTB), however there is some controversy concerning the utility of UNTB compared to other null models og biodiversity.  UNTB postulates that species richness and abundance is generated exclusively through genetic drift between species.  Consequently, one should expect that a community governed by UNTB would have predominantly random species associations at any given point in time.  For this study we analyzed tree species associations on Barro Colorado Island in Panama.  Rank abundance of all individuals in the study site followed a log normal distribution.  Among sites, we found that only 21.3% of tree associations were nonrandom, of which 64.64% were positive associations and 35.36% were negative associations.  The frequency of this distribution of associaitons was not significantly different from the frequencies of a randomly generated distribution (x2 = 0.336, df = 1, p = 0.562).  Future research should focus on comparing various null distribution models to see if UNTB better explains this seemingly random distribution.       
+Perhaps the most well-documented neutral model of biodiversity is the Unified Neutral Theory of Biodiversity (UNTB), however there is some controversy concerning the utility of UNTB compared to other null models og biodiversity.  UNTB postulates that species richness and abundance is generated exclusively through genetic drift between species.  Consequently, one should expect that a community governed by UNTB would have predominantly random species associations at any given point in time.  For this study we analyzed tree species associations on Barro Colorado Island in Panama.  Rank abundance of all individuals in the study site followed a log normal distribution.  Among sites, we found that only 21.3% of tree associations were nonrandom, of which 64.64% were positive associations and 35.36% were negative associations.  The frequency of this distribution of associaitons was not significantly different from the frequencies of a randomly generated null distribution (x2 = 0.36, df = 2, p = 0.83).  Future research should focus on comparing various null distribution models to see if UNTB best explains this seemingly random distribution.       
 
 ## 1) INTRODUCTION
 
@@ -40,12 +40,12 @@ require("tidyr")
 require("dplyr")
 require("cooccur")
 require("spatstat")
-require("dixon")
+
 ```
 
 ## 3) DESCRIPTION OF DATA
 
-Barro Colorado Island (BCI) was formed in the middle of Gatun Lake (9.1521° N, 79.8465° W) as a reult of the construction of the Panama Canal in Panama.  Since 1923 this island has been teh focus of extensive ecological research.  In 1980, a Forest Dynamics Plot was established for the purpose of studying a variety of aspects of tropical ecology.  The first complete tree census was completed in 1982 and have been repeated every 10 years since.  All trees and shurbs > 1 cm in diameter are identifed and counted for this census.  
+Barro Colorado Island (BCI) was formed in the middle of Gatun Lake (9.1521° N, 79.8465° W) as a reult of the construction of the Panama Canal in Panama in the ealry 20th century.  Since 1923 this island has been the focus of extensive ecological research.  In 1980, a 50 hectare Forest Dynamics Plot was established for the purpose of studying a variety of aspects of tropical ecology.  The first complete tree census was completed in 1982 and have been repeated every 10 years since.  All trees and shurbs > 1 cm in diameter are identifed and counted for this census.  
 
 We took 2010 census BCI 50ha plot dataset that contains long form individual ID number, Species name, Quadrat, PX and PY 50 ha coordinate grid, date censused, status, and DBH. I subsetted the dataset to just include the individual ID number, species name (Latin), Quadrat, and the PX and PY coordinates. 
 
@@ -93,27 +93,46 @@ cooccur::pair(mod = BCIcooc, "Desmopsis panamensis")
 cooccur::pair(mod = BCIcooc, "Trichilia tuberculata")
 
 #Random matrix assortment and cooccur dataframe
-BCI.df.random <- transform(BCI.df, Quadrat = sample(Quadrat))
-BCI.SbyS.r <- group_by(BCI.df.random, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
-BCI.SBS.r <- BCI.SbyS.r[ ,-1]
-BCI.SpbS.r <- t(BCI.SBS.r)
-BCI.SpbS.r[BCI.SpbS.r > 0] <- 1
-BCIcooc.rand <- cooccur::cooccur(mat = BCI.SpbS.r, type = "spp_site", thresh = T, spp_names = T)
-summary(BCIcooc.rand)
+exp.df <- rep(NA,(3*49))
+exp.df <- matrix(exp.df,3,49)
+N <- 49
+for(i in 1:N) {
+  df <- NA
+  BCI.df.random <- transform(BCI.df, Quadrat = sample(Quadrat))
+  BCI.SbyS.r <- group_by(BCI.df.random, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+  BCI.SBS.r <- BCI.SbyS.r[ ,-1]
+  BCI.SpbS.r <- t(BCI.SBS.r)
+  BCI.SpbS.r[BCI.SpbS.r > 0] <- 1
+  BCIcooc.rand <- cooccur::cooccur(mat = BCI.SpbS.r, type = "spp_site", thresh = T, spp_names = T)
+  exp.neg <- BCIcooc.rand$negative
+  exp.pos <- BCIcooc.rand$positive
+  exp.rand <- BCIcooc.rand$random
+  exp.df[,i] <- cbind(exp.neg, exp.pos, exp.rand)
+}
 
 
 
-#chisquare between frequencies of random resesults and observed results
-exp.pos <- 1669/31620
-exp.neg <- 573/31620
-exp.rand <- 29378/31620
+
+
+#chisquare GOF between frequencies of random results and observed results
+  #HO: Observed equals expected
+  #HA: Observed does not equal expected
+
+rowMeans(exp.df, na.rm = FALSE, dims = 1)
+sum(means)
+summary(BCIcooc)
+
+exp.pos <- 1638.2857/31632.43
+exp.neg <- 542.4286/31632.43
+exp.rand <- 29451.7143/31632.43
 obs.pos <- 3742/27202
 obs.neg <- 2047/27202
-obs.rand <- 2143/2702
-
+obs.rand <- 21413/27202
+  #Test statistic value
 x2 <- (((obs.pos-exp.pos)^2)/exp.pos) + (((obs.neg-exp.neg)^2)/exp.neg) + (((obs.rand-exp.rand)^2)/exp.rand)
-
-1-pchisq(x2,1)
+x2
+  # P-value on 2 df
+1-pchisq(x2,2)
 
 
 #pretty pictures of what overall tree density looks like
@@ -129,8 +148,7 @@ plot(den, add = T, cex = 0.5)
 contour(den)
 persp(den)
 
-#map of four most abundant trees
-
+#map and density visulation for four most abundant trees
 color <- brewer.pal(4,"Set1")
 BCI.xy <- subset(BCI, select = c(Latin, PX, PY))
 FA <- c("Hybanthus prunifolius","Faramea occidentalis","Desmopsis panamensis","Trichilia tuberculata")
@@ -222,7 +240,7 @@ count.Q.df <- group_by(onesided.count.Q.df, Individual) %>% count(Neighbors)
 
 ## 6) DISCUSSION AND CONCLUSION
 
-Results from the study suggest that tree community composition on Barro Colorado Island in Panama is randomly distributed.  However, these results do not necessarily support the assumptions of the Unified Theory of Biodiversity and more research is needed. 
+Based on the results of this study we have accepted our alternative hypothesis.  Tree community composition on Barro Colorado Island in Panama consists of predominantly random associations among sites within the 50 hectare plot.  This conclusion was further supported by the random distribution of community indicicence following a similar pattern.  These results justify a more in-depth analysis of the mechanisms that may drive the neutral community arrangement of trees in this area.  A limitation of this study was the lack of inventigation into associations based on species abundance within sites.  Instead, this study focused on the incidence of species among sites.  In the future it will be interesting to study associations between tree species on the individual level using abundance data that includes an analysis that estimates the likilhood of homospecific associations.  Furthremore, a more in-depth study of mechanisms that are driving community composition would provide a better indiciation of whether tree community composition on BCI is regulated by the assumptions of the Unified Neutral Theory of Biodiversity.  Overall, since the need for tropical forest conservation is increasing in the face of global change, understading more about the process of community stucture will aid in developing more robust mitigation stratigies for maximizing diversity in tropical ecosystems. 
 
 
 ## 7) REFERENCES
