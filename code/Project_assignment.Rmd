@@ -93,6 +93,22 @@ cooccur::pair(mod = BCIcooc, "Desmopsis panamensis")
 cooccur::pair(mod = BCIcooc, "Trichilia tuberculata")
 
 #Random matrix assortment and cooccur dataframe
+exp.df <-NA
+for(i in 3) {
+  df <- NA
+  BCI.df.random <- transform(BCI.df, Quadrat = sample(Quadrat))
+  BCI.SbyS.r <- group_by(BCI.df.random, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
+  BCI.SBS.r <- BCI.SbyS.r[ ,-1]
+  BCI.SpbS.r <- t(BCI.SBS.r)
+  BCI.SpbS.r[BCI.SpbS.r > 0] <- 1
+  BCIcooc.rand <- cooccur::cooccur(mat = BCI.SpbS.r, type = "spp_site", thresh = T, spp_names = T)
+  exp.neg <- BCIcooc$negative
+  exp.pos <- BCIcooc$positive
+  exp.rand <- BCIcooc$random
+  df <- rbind(exp.neg, exp.pos, exp.rand)
+  exp.df <- cbind(exp.df, df)
+
+}
 BCI.df.random <- transform(BCI.df, Quadrat = sample(Quadrat))
 BCI.SbyS.r <- group_by(BCI.df.random, Quadrat) %>% count(Latin) %>% spread(key=Latin, value=n , fill=0)
 BCI.SBS.r <- BCI.SbyS.r[ ,-1]
@@ -109,11 +125,11 @@ exp.neg <- 573/31620
 exp.rand <- 29378/31620
 obs.pos <- 3742/27202
 obs.neg <- 2047/27202
-obs.rand <- 2143/2702
+obs.rand <- 21413/27202
 
 x2 <- (((obs.pos-exp.pos)^2)/exp.pos) + (((obs.neg-exp.neg)^2)/exp.neg) + (((obs.rand-exp.rand)^2)/exp.rand)
 
-1-pchisq(x2,1)
+1-pchisq(x2,2)
 
 
 #pretty pictures of what overall tree density looks like
