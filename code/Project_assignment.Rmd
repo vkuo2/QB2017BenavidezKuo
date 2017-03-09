@@ -1,5 +1,5 @@
 ---
-title: "Co-occurrence of tree species in a small tropical island "
+title: "Co-occurrence of tree species in a small tropical island"
 author: "Venus Kuo and Michelle Benavidez, Quantitative Biodiversity, Indiana University"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
@@ -40,7 +40,7 @@ require("tidyr")
 require("dplyr")
 require("cooccur")
 require("spatstat")
-
+library("RColorBrewer")
 ```
 
 ## 3) DESCRIPTION OF DATA
@@ -93,9 +93,9 @@ cooccur::pair(mod = BCIcooc, "Desmopsis panamensis")
 cooccur::pair(mod = BCIcooc, "Trichilia tuberculata")
 
 #Random matrix assortment and cooccur dataframe
-exp.df <- rep(NA,(3*49))
-exp.df <- matrix(exp.df,3,49)
-N <- 49
+exp.df <- rep(NA,(3*99))
+exp.df <- matrix(exp.df,3,99)
+N <- 99
 for(i in 1:N) {
   df <- NA
   BCI.df.random <- transform(BCI.df, Quadrat = sample(Quadrat))
@@ -111,9 +111,6 @@ for(i in 1:N) {
 }
 
 
-
-
-
 #chisquare GOF between frequencies of random results and observed results
   #HO: Observed equals expected
   #HA: Observed does not equal expected
@@ -121,10 +118,11 @@ for(i in 1:N) {
 rowMeans(exp.df, na.rm = FALSE, dims = 1)
 sum(means)
 summary(BCIcooc)
+29457.5152+1628.4747+544.1414
 
-exp.pos <- 1638.2857/31632.43
-exp.neg <- 542.4286/31632.43
-exp.rand <- 29451.7143/31632.43
+exp.pos <- 1628.4747/31630.13
+exp.neg <- 544.1414/31630.13
+exp.rand <- 29457.5152/31630.13
 obs.pos <- 3742/27202
 obs.neg <- 2047/27202
 obs.rand <- 21413/27202
@@ -163,6 +161,7 @@ plot(den2)
 plot(den2, add = T, cex = 0.5)
 
 plot(Four$PX,Four$PY, col=color,pch = 19, cex = 0.3, xlab = "", ylab = "", main = "Four most Abundant Species on the 50 Hectare Plot in Barro Colorado Island")
+legend('topright', legend = c("Hybanthus prunifolius","Faramea occidentalis","Desmopsis panamensis","Trichilia tuberculata"), bty = "o", pch = 20, cex = .8, col = color)
 ```
 
 # Observed co occurance paterns on the small grain scale # 
